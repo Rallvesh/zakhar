@@ -29,7 +29,7 @@ func Start() {
 		log.Fatalf("Error creating bot: %v", err)
 	}
 
-	log.Printf("Bot %s is started!", bot.Self.UserName)
+	log.Printf("Bot %s is started!", bot.Self.FirstName)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -40,6 +40,8 @@ func Start() {
 		if update.Message == nil {
 			continue
 		}
+
+		log.Printf("Message from %s in %d: %s", update.Message.From.UserName, update.Message.Chat.ID, update.Message.Text)
 
 		if update.Message.IsCommand() {
 			switch update.Message.Command() {
