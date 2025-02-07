@@ -1,4 +1,4 @@
-package main
+package metrika
 
 import (
 	"encoding/json"
@@ -6,13 +6,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"time"
+
+	"github.com/joho/godotenv"
 )
 
-const (
-	token      = "YOUR_OAUTH_TOKEN"
-	counterID  = "YOUR_COUNTER_ID"
-	metricsURL = "https://api-metrika.yandex.net/stat/v1/data"
-)
+const metricsURL = "https://api-metrika.yandex.net/stat/v1/data"
 
 type YandexMetrikaResponse struct {
 	Data []struct {
@@ -20,10 +20,26 @@ type YandexMetrikaResponse struct {
 	} `json:"data"`
 }
 
-func getMetrikaStats() {
+func LoadEnv() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: .env file not found, using system environment variables")
+	}
+}
+
+func GetStats() {
+	LoadEnv()
+
+	token := os.Getenv("YANDEX_METRIKA_TOKEN")
+	counterID := os.Getenv("YANDEX_METRIKA_COUNTER_ID")
+
+	if token == "" || counterID == "" {
+		log.Fatal("Error: YANDEX_METRIKA_TOKEN or YANDEX_METRIKA_COUNTER_ID is not set")
+	}
+
 	params := url.Values{}
 	params.Set("ids", counterID)
-	params.Set("metrics", "ym:s:visits,ym:s:users,ym:s:pageviews")
+	params.Set("metrics", "ym:s:pageviews,ym:s:visits,ym:s:users")
 	params.Set("date1", "today")
 	params.Set("date2", "today")
 	params.Set("accuracy", "full")
@@ -50,13 +66,14 @@ func getMetrikaStats() {
 		log.Fatalf("Error parsing response: %v", err)
 	}
 
-	fmt.Println("Статистика:")
-	for _, data := range result.Data {
-		fmt.Printf("Визиты: %.0f, Пользователи: %.0f, Просмотры: %.0f\n",
-			data.Metrics[0], data.Metrics[1], data.Metrics[2])
-	}
-}
+	today := time.Now().Format("2006-01-02")
+	fmt.Printf("Статистика за %s:\n", today)
 
-func main() {
-	getMetrikaStats()
+	if len(result.Data) > 0 {
+		data := result.Data[0]
+		fmt.Printf("Просмотры: %.0f, Визиты: %.0f, Посетители: %.0f\n",
+			data.Metrics[0], data.Metrics[1], data.Metrics[2])
+	} else {
+		fmt.Println("No data available for today")
+	}
 }
