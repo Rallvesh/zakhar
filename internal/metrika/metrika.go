@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/rallvesh/zakhar/internal/logger"
 )
 
 const metricsURL = "https://api-metrika.yandex.net/stat/v1/data"
@@ -30,11 +32,13 @@ func LoadEnv() {
 func GetStats() string {
 	LoadEnv()
 
+	logger := logger.Init()
+
 	token := os.Getenv("YANDEX_METRIKA_TOKEN")
 	counterID := os.Getenv("YANDEX_METRIKA_COUNTER_ID")
 
 	if token == "" || counterID == "" {
-		log.Fatal("Error: YANDEX_METRIKA_TOKEN or YANDEX_METRIKA_COUNTER_ID is not set")
+		logger.Error("YANDEX_METRIKA_TOKEN or YANDEX_METRIKA_COUNTER_ID is not set")
 	}
 
 	params := url.Values{}
@@ -46,24 +50,24 @@ func GetStats() string {
 
 	req, err := http.NewRequest("GET", metricsURL+"?"+params.Encode(), nil)
 	if err != nil {
-		log.Fatalf("Error creating request: %v", err)
+		logger.Error("Error creating request", slog.Any("error", err))
 	}
 	req.Header.Set("Authorization", "OAuth "+token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatalf("Error sending request: %v", err)
+		logger.Error("Error sending request", slog.Any("error", err))
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Error: Response status %d", resp.StatusCode)
+		logger.Error("Response status", slog.Any("error", resp.StatusCode))
 	}
 
 	var result YandexMetrikaResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		log.Fatalf("Error parsing response: %v", err)
+		logger.Error("Error parsing response", slog.Any("error", err))
 	}
 
 	today := time.Now().Format("2006-01-02")
