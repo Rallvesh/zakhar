@@ -27,7 +27,7 @@ func LoadEnv() {
 	}
 }
 
-func GetStats() {
+func GetStats() string {
 	LoadEnv()
 
 	token := os.Getenv("YANDEX_METRIKA_TOKEN")
@@ -67,13 +67,11 @@ func GetStats() {
 	}
 
 	today := time.Now().Format("2006-01-02")
-	fmt.Printf("Статистика за %s:\n", today)
 
 	if len(result.Data) > 0 {
 		data := result.Data[0]
-		fmt.Printf("Просмотры: %.0f, Визиты: %.0f, Посетители: %.0f\n",
-			data.Metrics[0], data.Metrics[1], data.Metrics[2])
-	} else {
-		fmt.Println("No data available for today")
+		return fmt.Sprintf("📊 Статистика за %s:\nВизиты: %.0f\nПользователи: %.0f\nПросмотры: %.0f",
+			today, data.Metrics[0], data.Metrics[1], data.Metrics[2])
 	}
+	return "Нет данных за сегодняшний день"
 }

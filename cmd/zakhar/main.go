@@ -1,7 +1,7 @@
 package main
 
-import "github.com/rallvesh/zakhar/internal/metrika"
+import "github.com/rallvesh/zakhar/internal/bot"
 
 func main() {
-	metrika.GetStats()
+	bot.Start()
 }
