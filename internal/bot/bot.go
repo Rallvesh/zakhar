@@ -50,6 +50,10 @@ func Start() {
 			logger.Info(update.Message.Text, slog.String("user", update.Message.From.UserName), slog.Int64("chat_id", update.Message.Chat.ID))
 
 			switch update.Message.Command() {
+			case "start":
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Hello, "+update.Message.From.FirstName+"!")
+				bot.Send(msg)
+				// logger.Info("/start", slog.String("user", update.Message.From.UserName), slog.Int64("chat_id", update.Message.Chat.ID))
 			case "stats":
 				stats := metrika.GetStats()
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, stats)
