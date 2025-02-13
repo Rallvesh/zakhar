@@ -72,8 +72,9 @@ func Start() {
 					continue
 				}
 
-				stats := metrika.GetStats()
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, stats)
+				user := metrika.GetUserStats()
+				traffic := metrika.GetTrafficStats()
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, user+"\n\n"+traffic)
 				bot.Send(msg)
 			default:
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command")

@@ -18,6 +18,9 @@ const metricsURL = "https://api-metrika.yandex.net/stat/v1/data"
 
 type YandexMetrikaResponse struct {
 	Data []struct {
+		Dimensions []struct {
+			Name string `json:"name"`
+		} `json:"dimensions"`
 		Metrics []float64 `json:"metrics"`
 	} `json:"data"`
 }
@@ -29,13 +32,60 @@ func LoadEnv() {
 	}
 }
 
-func GetStats() string {
+func GetUserStats() string {
 	LoadEnv()
 
-	logger := logger.Init()
+	generalStats, err := FetchStats("ym:s:pageviews,ym:s:visits,ym:s:users", "")
+	if err != nil || len(generalStats.Data) == 0 {
+		return "Ошибка получения статистики по пользователям."
+	}
 
+	today := time.Now().Format("2006-01-02")
+	return fmt.Sprintf(
+		"📊 Статистика за %s:\n"+
+			"👥 Пользователи:\n"+
+			"- Просмотры: %.0f\n"+
+			"- Визиты: %.0f\n"+
+			"- Пользователи: %.0f",
+		today,
+		generalStats.Data[0].Metrics[0], // Просмотры
+		generalStats.Data[0].Metrics[1], // Визиты
+		generalStats.Data[0].Metrics[2], // Пользователи
+	)
+}
+
+func GetTrafficStats() string {
+	LoadEnv()
+
+	trafficStats, err := FetchStats("ym:s:visits", "ym:s:trafficSource")
+	if err != nil || len(trafficStats.Data) == 0 {
+		return "Ошибка получения статистики по источникам трафика."
+	}
+
+	trafficSources := ""
+	for _, row := range trafficStats.Data {
+		if len(row.Dimensions) > 0 {
+			trafficSources += fmt.Sprintf("- %s: %.0f\n", row.Dimensions[0].Name, row.Metrics[0])
+		}
+	}
+	if trafficSources == "" {
+		trafficSources = "Нет данных по источникам трафика."
+	}
+
+	today := time.Now().Format("2006-01-02")
+	return fmt.Sprintf(
+		"📊 Статистика за %s:\n"+
+			"🚦 Источники трафика:\n%s",
+		today,
+		trafficSources,
+	)
+}
+
+func FetchStats(metrics string, dimensions string) (YandexMetrikaResponse, error) {
 	token := os.Getenv("YANDEX_METRIKA_TOKEN")
 	counterID := os.Getenv("YANDEX_METRIKA_COUNTER_ID")
+
+	logger := logger.Init()
 
 	if token == "" || counterID == "" {
 		logger.Error("YANDEX_METRIKA_TOKEN or YANDEX_METRIKA_COUNTER_ID is not set")
@@ -43,10 +93,13 @@ func GetStats() string {
 
 	params := url.Values{}
 	params.Set("ids", counterID)
-	params.Set("metrics", "ym:s:pageviews,ym:s:visits,ym:s:users")
+	params.Set("metrics", metrics)
 	params.Set("date1", "today")
 	params.Set("date2", "today")
 	params.Set("accuracy", "full")
+	if dimensions != "" {
+		params.Set("dimensions", dimensions)
+	}
 
 	req, err := http.NewRequest("GET", metricsURL+"?"+params.Encode(), nil)
 	if err != nil {
@@ -62,7 +115,7 @@ func GetStats() string {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		logger.Error("Response status", slog.Any("error", resp.StatusCode))
+		logger.Error("Response status", slog.Int("status_code", resp.StatusCode))
 	}
 
 	var result YandexMetrikaResponse
@@ -70,12 +123,5 @@ func GetStats() string {
 		logger.Error("Error parsing response", slog.Any("error", err))
 	}
 
-	today := time.Now().Format("2006-01-02")
-
-	if len(result.Data) > 0 {
-		data := result.Data[0]
-		return fmt.Sprintf("📊 Статистика за %s:\nВизиты: %.0f\nПользователи: %.0f\nПросмотры: %.0f",
-			today, data.Metrics[0], data.Metrics[1], data.Metrics[2])
-	}
-	return "Нет данных за сегодняшний день"
+	return result, nil
 }

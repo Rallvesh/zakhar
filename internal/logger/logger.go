@@ -14,7 +14,7 @@ func Init() *slog.Logger {
 	logger := slog.New(encoder)
 
 	// Optional: Set the log level (you can adjust as needed)
-	logger.Info("Logger initialized")
+	// logger.Info("Logger initialized")
 
 	return logger
 }
