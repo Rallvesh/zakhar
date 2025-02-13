@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/rallvesh/zakhar/internal/logger"
@@ -40,14 +39,11 @@ func GetUserStats() string {
 		return "Ошибка получения статистики по пользователям."
 	}
 
-	today := time.Now().Format("2006-01-02")
 	return fmt.Sprintf(
-		"📊 Статистика за %s:\n"+
-			"👥 Пользователи:\n"+
+		"👥 Пользователи:\n"+
 			"- Просмотры: %.0f\n"+
 			"- Визиты: %.0f\n"+
 			"- Пользователи: %.0f",
-		today,
 		generalStats.Data[0].Metrics[0], // Просмотры
 		generalStats.Data[0].Metrics[1], // Визиты
 		generalStats.Data[0].Metrics[2], // Пользователи
@@ -72,11 +68,8 @@ func GetTrafficStats() string {
 		trafficSources = "Нет данных по источникам трафика."
 	}
 
-	today := time.Now().Format("2006-01-02")
 	return fmt.Sprintf(
-		"📊 Статистика за %s:\n"+
-			"🚦 Источники трафика:\n%s",
-		today,
+		"🚦 Источники трафика:\n%s",
 		trafficSources,
 	)
 }

@@ -1,11 +1,13 @@
 package bot
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
@@ -72,9 +74,12 @@ func Start() {
 					continue
 				}
 
+				today := time.Now().Format("2006-01-02")
+				statsMessage := fmt.Sprintf("📊 Статистика за %s\n", today)
 				user := metrika.GetUserStats()
 				traffic := metrika.GetTrafficStats()
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, user+"\n\n"+traffic)
+
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, statsMessage+"\n"+user+"\n\n"+traffic)
 				bot.Send(msg)
 			default:
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Unknown command")
